@@ -105,7 +105,7 @@ start=$(date +%s)
 echo "[build_and_squash] ... Building ICON"
 
 # Test in-source build => OK
-uenv run ${UENV} --view default -- time ../config/cscs/${TARGET}
+uenv run ${UENV} --view default -- time ./config/cscs/${TARGET}
 
 # # Test out-of-source build => OK
 # BUILD_DIR="build_${TARGET//./_}"
