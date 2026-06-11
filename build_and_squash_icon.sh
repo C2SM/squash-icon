@@ -33,7 +33,7 @@ BUILD_DIR="${BUILD_DIR:-$DEFAULT_BUILD_DIR}"
 
 # Uenv
 # ----
-UENV=${UENV:-"icon/26.2:2544170721"}
+UENV=${UENV:-"icon/26.2:2592285960"}
 
 # Helper functions
 # ----------------
@@ -47,7 +47,7 @@ elapsed(){
 # One of "santis.gpu.nvhpc", etc ...
 TARGET="${1}"
 if [ -z "${TARGET}" ]; then
-    echo "ERROR: TARGET not set. Should one of 'santis.gpu.nvhpc', etc ..."
+    echo "ERROR: TARGET not set. Should be one of 'santis.gpu.nvhpc', etc ..."
 fi
 echo "[build_and_squash] ... Set up for ${TARGET}"
 
@@ -85,8 +85,7 @@ start=$(date +%s)
 echo "[build_and_squash] ... Getting ICON"
 
 ICON_REPO='git@gitlab.dkrz.de:icon/icon-nwp.git'
-# This branch is a merge of add_icon4py and update_spack_1.1_santis
-ICON_BRANCH='add_icon4py_spack_v1.1'
+ICON_BRANCH='add_icon4py'
 ICON_DIRNAME="icon-nwp_${ICON_BRANCH}"
 
 git clone --depth 1 --recurse-submodules --shallow-submodules -b "${ICON_BRANCH}" "${ICON_REPO}" "${ICON_DIRNAME}"
