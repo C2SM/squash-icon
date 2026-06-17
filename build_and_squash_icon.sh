@@ -33,7 +33,7 @@ build_dir="${build_dir:-$default_build_dir}"
 
 # Uenv
 # ----
-icon_uenv=${icon_uenv:-"icon/26.2:2609004181"}
+icon_uenv=${icon_uenv:-"icon/26.2:2609525443"}
 
 # Helper functions
 # ----------------

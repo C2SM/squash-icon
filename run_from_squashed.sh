@@ -13,7 +13,7 @@ fi
 
 # Uenv
 # ----
-ICON_UENV=${ICON_UENV:-"icon/26.2:2609004181"}
+ICON_UENV=${ICON_UENV:-"icon/26.2:2609525443"}
 squashed_icon=$(realpath "${1}")
 
 
