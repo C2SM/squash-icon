@@ -7,14 +7,18 @@ set -e
 # Init
 # ========================================
 
+ICON_UENV=${ICON_UENV:-"icon/26.2:2609525443"}
+
 if [ -z "${1}" ]; then
     echo "ERROR: icon squashed file not provided"
+    exit 1
 fi
-
-# Uenv
-# ----
-ICON_UENV=${ICON_UENV:-"icon/26.2:2609525443"}
 squashed_icon=$(realpath "${1}")
+if [ -z "${2}" ]; then
+    echo "ERROR: exp name not provided"
+    exit 1
+fi
+exp="${2}"
 
 
 # ========================================
@@ -38,9 +42,9 @@ echo "use_builddir=\"$(pwd)\"" >> ./run/set-up.info
 
 # Remove the sourcing of run.env from setting
 sed -i '/\..*run\.env$/d' ./setting
-echo "export PYTHONOPTIMIZE=2" >> ./setting
 
 # Add icon4py relevant variables (some others are already in setting)
+echo "export PYTHONOPTIMIZE=2" >> ./setting
 echo "export GT4PY_BUILD_CACHE_LIFETIME=\"persistent\"" >> ./setting
 popd >/dev/null 2>&1
 
@@ -51,7 +55,6 @@ popd >/dev/null 2>&1
 
 pushd ${icon_run} >/dev/null 2>&1
 
-exp=mch_icon-ch2_small
 uenv run ${squashed_icon}:${icon_mount} -- ./make_runscripts ${exp}
 
 pushd run >/dev/null 2>&1
