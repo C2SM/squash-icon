@@ -16,24 +16,24 @@ set -e
 # Check if building on compute or login node
 # ------------------------------------------
 if [ -n "${SLURM_JOB_ID:-}" ]; then
-    ON_COMPUTE_NODE="true"
+    on_compute_node="true"
 else
-    ON_COMPUTE_NODE="false"
+    on_compute_node="false"
 fi
 
 # Build dir
 # ---------
-if [ "${ON_COMPUTE_NODE}" == "true" ]; then
-    DEFAULT_BUILD_DIR="/dev/shm/${USER}/build_and_squash_icon"
+if [ "${on_compute_node}" == "true" ]; then
+    default_build_dir="/dev/shm/${USER}/build_and_squash_icon"
 else
-    SCRIPT_DIR=$(cd "$(dirname "$0")"; pwd)
-    DEFAULT_BUILD_DIR="${SCRIPT_DIR}/build_and_squash_icon"
+    script_dir=$(cd "$(dirname "$0")"; pwd)
+    default_build_dir="${script_dir}/build_and_squash_icon"
 fi
-BUILD_DIR="${BUILD_DIR:-$DEFAULT_BUILD_DIR}"
+build_dir="${build_dir:-$default_build_dir}"
 
 # Uenv
 # ----
-UENV=${UENV:-"icon/26.2:2592419933"}
+icon_uenv=${icon_uenv:-"icon/26.2:2609004181"}
 
 # Helper functions
 # ----------------
@@ -45,11 +45,11 @@ elapsed(){
 # Target
 # ----------
 # One of "santis.gpu.nvhpc", etc ...
-TARGET="${1}"
-if [ -z "${TARGET}" ]; then
-    echo "ERROR: TARGET not set. Should be one of 'santis.gpu.nvhpc', etc ..."
+build_target="${1}"
+if [ -z "${build_target}" ]; then
+    echo "ERROR: build_target not set. Should be one of 'santis.gpu.nvhpc', etc ..."
 fi
-echo "[build_and_squash] ... Set up for ${TARGET}"
+echo "[build_and_squash] ... Set up for ${build_target}"
 
 # Cloning urls with token
 # -----------------------
@@ -69,12 +69,12 @@ GIT_CONFIG_VALUE_1="git@github.com:"
 # ========================================
 
 overall_start=$(date +%s)
-echo "[build_and_squash] ... Building ICON in ${BUILD_DIR}"
+echo "[build_and_squash] ... Building ICON in ${build_dir}"
 
-rm -rf "${BUILD_DIR}"
-mkdir -p "${BUILD_DIR}"
-ORIGINAL_DIR="$(pwd)"
-pushd "${BUILD_DIR}" >/dev/null 2>&1
+rm -rf "${build_dir}"
+mkdir -p "${build_dir}"
+original_dir="$(pwd)"
+pushd "${build_dir}" >/dev/null 2>&1
 
 
 # ========================================
@@ -84,9 +84,11 @@ pushd "${BUILD_DIR}" >/dev/null 2>&1
 start=$(date +%s)
 echo "[build_and_squash] ... Getting ICON"
 
-ICON_REPO='git@gitlab.dkrz.de:icon/icon-nwp.git'
-ICON_BRANCH='add_icon4py'
-ICON_DIRNAME="icon-nwp_${ICON_BRANCH}"
+ICON_REPO=${ICON_REPO:-'git@gitlab.dkrz.de:icon/icon-nwp.git'}
+ICON_BRANCH=${ICON_BRANCH:-'main'}
+icon_name=$(basename $ICON_REPO)
+icon_name=${icon_name%%.git}
+ICON_DIRNAME="${icon_name}_${ICON_BRANCH}"
 
 git clone --depth 1 --recurse-submodules --shallow-submodules -b "${ICON_BRANCH}" "${ICON_REPO}" "${ICON_DIRNAME}"
 
@@ -104,13 +106,13 @@ start=$(date +%s)
 echo "[build_and_squash] ... Building ICON"
 
 # Test in-source build => OK
-uenv run ${UENV} --view default -- time ./config/cscs/${TARGET}
+uenv run ${icon_uenv} --view default -- time ./config/cscs/${build_target}
 
 # # Test out-of-source build => OK
-# BUILD_DIR="build_${TARGET//./_}"
-# mkdir $BUILD_DIR
-# pushd $BUILD_DIR >/dev/null 2>&1
-# uenv run ${UENV} --view default -- time ../config/cscs/${TARGET}
+# build_dir="build_${build_target//./_}"
+# mkdir $build_dir
+# pushd $build_dir >/dev/null 2>&1
+# uenv run ${icon_uenv} --view default -- time ../config/cscs/${build_target}
 # popd >/dev/null 2>&1
 
 stop=$(date +%s)
@@ -125,7 +127,7 @@ popd >/dev/null 2>&1
 
 start=$(date +%s)
 echo "[build_and_squash] ... Squashing"
-ICON_SQUASH_FILE="${ICON_DIRNAME}_${TARGET}.squashfs"
+ICON_SQUASH_FILE="${ICON_DIRNAME}_${build_target}.squashfs"
 mksquashfs "${ICON_DIRNAME}" "${ICON_SQUASH_FILE}" -no-recovery -noappend -Xcompression-level 3 || exit
 stop=$(date +%s)
 echo "[build_and_squash] ... Squashing => done in $(elapsed $start $stop)"
@@ -137,7 +139,7 @@ echo "[build_and_squash] ... Squashing => done in $(elapsed $start $stop)"
 
 start=$(date +%s)
 echo "[build_and_squash] ... Retrieving squash"
-rsync -av "${ICON_SQUASH_FILE}" "${ORIGINAL_DIR}/."
+rsync -av "${ICON_SQUASH_FILE}" "${original_dir}/."
 stop=$(date +%s)
 echo "[build_and_squash] ... Retrieving squash => done in $(elapsed $start $stop)"
 
@@ -146,10 +148,10 @@ echo "[build_and_squash] ... Retrieving squash => done in $(elapsed $start $stop
 # Clean /dev/shm on login node
 # ========================================
 # 
-if [ "${ON_COMPUTE_NODE}" == "false" ] && [ "${BUILD_DIR}" == "/dev/shm/*" ]; then
+if [ "${on_compute_node}" == "false" ] && [ "${build_dir}" == "/dev/shm/*" ]; then
     start=$(date +%s)
-    echo "[build_and_squash] ... cleaning ${BUILD_DIR}"
-    rm -rf "${BUILD_DIR}"
+    echo "[build_and_squash] ... cleaning ${build_dir}"
+    rm -rf "${build_dir}"
     stop=$(date +%s)
     echo "[build_and_squash] ... cleaning => done in $(elapsed $start $stop)"
 fi
@@ -162,7 +164,7 @@ fi
 stop=$(date +%s)
 echo "[build_and_squash] ... build and squash complete in $(elapsed $overall_start $stop)"
 
-if [ "${ON_COMPUTE_NODE}" == "true" ]; then
+if [ "${on_compute_node}" == "true" ]; then
     sacct -j "${SLURM_JOB_ID}" --format "JobID, JobName, AllocCPUs, Elapsed, ElapsedRaw, CPUTimeRAW, ConsumedEnergyRaw, MaxRSS, MaxVMSize, AveRSS"
 fi
 

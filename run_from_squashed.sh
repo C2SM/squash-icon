@@ -7,39 +7,59 @@ set -e
 # Init
 # ========================================
 
+if [ -z "${1}" ]; then
+    echo "ERROR: icon squashed file not provided"
+fi
+
 # Uenv
 # ----
-UENV=${UENV:-"icon/26.2:2592419933"}
-SQUASHED_ICON=${SQUASHED_ICON:-"/capstor/scratch/cscs/leclairm/tmp/icon-nwp_add_icon4py_santis.icon4py.nvhpc.squashfs"}
+ICON_UENV=${ICON_UENV:-"icon/26.2:2609004181"}
+squashed_icon=$(realpath "${1}")
 
 
 # ========================================
 # Link and copy from mounted icon dir
 # ========================================
 
-ICON_MOUNT=${ICON_MOUNT:-"$(realpath ./ICON_MOUNT)"}
-ICON_RUN=${ICON_RUN:-"$(realpath ./ICON_RUN)"}
+icon_mount=${icon_mount:-"$(realpath ./ICON_MOUNT)"}
+icon_run=${icon_run:-"$(realpath ./ICON_RUN)"}
 
-rm -rf ${ICON_MOUNT}
-mkdir ${ICON_MOUNT}
-uenv run ${SQUASHED_ICON}:${ICON_MOUNT} -- ./clone_squash.sh ${ICON_MOUNT} ${ICON_RUN}
+mkdir -p ${icon_mount}
+uenv run ${squashed_icon}:${icon_mount} -- ./duplink.sh --origin=${icon_mount} --target=${icon_run} --concrete="setting:run/set-up.info"
+
+
+# ========================================
+# Modify necessary files
+# ========================================
+
+# enable makre_runscripts from the "cloned" directory
+pushd ${icon_run} >/dev/null 2>&1
+echo "use_builddir=\"$(pwd)\"" >> ./run/set-up.info
+
+# Remove the sourcing of run.env from setting
+sed -i '/\..*run\.env$/d' ./setting
+echo "export PYTHONOPTIMIZE=2" >> ./setting
+
+# Add icon4py relevant variables (some others are already in setting)
+echo "export GT4PY_BUILD_CACHE_LIFETIME=\"persistent\"" >> ./setting
+popd >/dev/null 2>&1
 
 
 # ========================================
 # Run
 # ========================================
 
-pushd ${ICON_RUN} >/dev/null 2>&1
+pushd ${icon_run} >/dev/null 2>&1
 
-EXP=mch_icon-ch2_small
-uenv run ${SQUASHED_ICON}:${ICON_MOUNT} -- ./make_runscripts ${EXP}
+exp=mch_icon-ch2_small
+uenv run ${squashed_icon}:${icon_mount} -- ./make_runscripts ${exp}
 
 pushd run >/dev/null 2>&1
-sbatch --uenv ${UENV},${SQUASHED_ICON}:${ICON_MOUNT} --view default \
+sbatch --uenv ${ICON_UENV},${squashed_icon}:${icon_mount} --view default \
     --time 00:30:00 \
     --account cwd01 \
     --partition debug \
-    ./exp.${EXP}.run
+    ./exp.${exp}.run
 popd >/dev/null 2>&1
 
 popd >/dev/null 2>&1
