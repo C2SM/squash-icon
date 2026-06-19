@@ -3,8 +3,7 @@
 #SBATCH --account=cwd01
 #SBATCH --time=01:00:00
 #SBATCH --output="build_and_squash_icon.%j.o"
-#SBATCH --partition=shared
-#SBATCH --gpus-per-node=1
+#SBATCH --partition=debug
 
 set -e
 
@@ -12,6 +11,95 @@ set -e
 # ========================================
 # Init
 # ========================================
+
+# TODO: enable build target selection
+
+# Help
+# ----
+help_msg(){
+    echo
+    echo "Build and squash the icon directory"
+    echo
+    echo "Usage:"
+    echo "$0 [required arguments] [optional arguments]"
+    echo
+    echo "required arguments"
+    echo "  --uenv=UENV                    icon uenv"
+    echo
+    echo "optional arguments"
+    echo "  --repo=ICON_REPO               icon git repository, default: git@gitlab.dkrz.de:icon/icon-nwp.git"
+    echo "  --branch=ICON_BRANCH           branch of ICON_REPO, default: master"
+    echo "  --squash=SQUASHED_FILE         squashed filename for the icon directory, default infered from ICON_REPO and ICON_BRANCH"
+    echo "  --targets=TARGET1,...          comma separated list of build targets, default: santis.cpu.nvhpc,santis.gpu.nvhpc,santis.icon4py.nvhpc"
+    echo "  --gitlab-dkrz-token TOKEN      clone from gitlab.dkrz.de with TOKEN instead of ssh"
+    echo "  --github-tokenc TOKEN          clone from github.com with TOKEN instead of ssh"
+}
+
+# Set defaults
+# ------------
+# Required args
+icon_uenv=""
+
+# Optional args
+icon_repo="git@gitlab.dkrz.de:icon/icon-nwp.git"
+icon_branch="master"
+squashed_icon=""
+build_targets=("santis.cpu.nvhpc" "santis.gpu.nvhpc" "santis.icon4py.nvhpc")
+gitlab_dkrz_token=""
+github_token=""
+
+# Parse CLI args
+# --------------
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --uenv=*) icon_uenv="${1#*=}"; shift 1;;
+        --repo=*) icon_repo="${1#*=}"; shift 1;;
+        --branch=*) icon_branch="${1#*=}"; shift 1;;
+        --squash=*) squashed_icon="$(realpath ${1#*=})"; shift 1;;
+        --target=*)
+            IFS=',' read -ra build_targets <<< "${1#*=}"
+            shift 1
+            ;;
+        --gitlab-dkrz-token=*) gitlab_dkrz_token="${1#*=}"; shift 1;;
+        --github-token=*) github_token="${1#*=}"; shift 1;;
+        --help) help_msg; exit 0;;
+        *)
+            help_msg
+            echo "ERROR: unrecognized argument: $1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+# Check required args
+# -------------------
+required_vars=("icon_uenv")
+required_opts=("--uenv")
+for ((k=0; k<${#required_vars[@]}; k++)); do
+    var_name=${required_vars[k]}
+    opt_name=${required_opts[k]}
+    if [ -z ${!var_name} ]; then
+        help_msg
+        echo
+        echo "ERROR: required option ${opt_name} not provided"
+        exit 1
+    fi
+done
+
+# Clone with tokens
+# -----------------
+k=0
+if [ -n "${gitlab_dkrz_token}" ]; then
+    eval "GIT_CONFIG_KEY_${k}=\"url.https://oauth2:${gitlab_dkrz_token}@gitlab.dkrz.de/.insteadOf\""
+    eval "GIT_CONFIG_VALUE_${k}=\"git@gitlab.dkrz.de:\""
+    (( k += 1 ))
+fi
+if [ -n "${github_token}" ]; then
+    eval "GIT_CONFIG_KEY_${k}=\"url.https://oauth2:${github_token}@github.com/.insteadOf\""
+    eval "GIT_CONFIG_VALUE_${k}=\"git@github.com:\""
+    (( k += 1 ))
+fi
+(( k > 0 )) &&  GIT_CONFIG_COUNT=${k}
 
 # Check if building on compute or login node
 # ------------------------------------------
@@ -24,16 +112,11 @@ fi
 # Build dir
 # ---------
 if [ "${on_compute_node}" == "true" ]; then
-    default_build_dir="/dev/shm/${USER}/build_and_squash_icon"
+    build_dir="/dev/shm/${USER}/build_and_squash_icon"
 else
     script_dir=$(cd "$(dirname "$0")"; pwd)
-    default_build_dir="${script_dir}/build_and_squash_icon"
+    build_dir="${script_dir}/build_and_squash_icon"
 fi
-build_dir="${build_dir:-$default_build_dir}"
-
-# Uenv
-# ----
-icon_uenv=${icon_uenv:-"icon/26.2:2609525443"}
 
 # Helper functions
 # ----------------
@@ -41,28 +124,6 @@ elapsed(){
     local seconds=$(($2 - $1))
     printf '%02d:%02d:%02d\n' $((seconds/3600)) $((seconds%3600/60)) $((seconds%60))
 }
-
-# Target
-# ----------
-# One of "santis.gpu.nvhpc", etc ...
-build_target="${1}"
-if [ -z "${build_target}" ]; then
-    echo "ERROR: build_target not set. Should be one of 'santis.gpu.nvhpc', etc ..."
-fi
-echo "[build_and_squash] ... Set up for ${build_target}"
-
-# Cloning urls with token
-# -----------------------
-if [ -z "${GITLAB_DKRZ_TOKEN}" ] || [ -z "${GITHUB_TOKEN}" ]; then
-    echo "ERROR: GITLAB_DKRZ_TOKEN and/or GITHUB_TOKEN unset"
-    exit 1
-fi
-GIT_CONFIG_COUNT=2
-GIT_CONFIG_KEY_0="url.https://oauth2:${GITLAB_DKRZ_TOKEN}@gitlab.dkrz.de/.insteadOf"
-GIT_CONFIG_VALUE_0="git@gitlab.dkrz.de:"
-GIT_CONFIG_KEY_1="url.https://oauth2:${GITHUB_TOKEN}@github.com/.insteadOf"
-GIT_CONFIG_VALUE_1="git@github.com:"
-
 
 # ========================================
 # Start
@@ -84,13 +145,11 @@ pushd "${build_dir}" >/dev/null 2>&1
 start=$(date +%s)
 echo "[build_and_squash] ... Getting ICON"
 
-ICON_REPO=${ICON_REPO:-'git@gitlab.dkrz.de:icon/icon-nwp.git'}
-ICON_BRANCH=${ICON_BRANCH:-'main'}
-icon_name=$(basename $ICON_REPO)
+icon_name=$(basename ${icon_repo})
 icon_name=${icon_name%%.git}
-ICON_DIRNAME="${icon_name}_${ICON_BRANCH}"
+icon_dirname="${icon_name}_${icon_branch}"
 
-git clone --depth 1 --recurse-submodules --shallow-submodules -b "${ICON_BRANCH}" "${ICON_REPO}" "${ICON_DIRNAME}"
+git clone --depth 1 --recurse-submodules --shallow-submodules -b "${icon_branch}" "${icon_repo}" "${icon_dirname}"
 
 stop=$(date +%s)
 echo "[build_and_squash] ... Getting ICON => done in $(elapsed $start $stop)"
@@ -100,21 +159,24 @@ echo "[build_and_squash] ... Getting ICON => done in $(elapsed $start $stop)"
 # Build
 # ========================================
 
-pushd "${ICON_DIRNAME}" >/dev/null 2>&1
+pushd "${icon_dirname}" >/dev/null 2>&1
 
 start=$(date +%s)
 echo "[build_and_squash] ... Building ICON"
 
-# Test in-source build => OK
-uenv run ${icon_uenv} --view default -- time ./config/cscs/${build_target}
-
-# # Test out-of-source build => OK
-# build_dir="build_${build_target//./_}"
-# mkdir $build_dir
-# pushd $build_dir >/dev/null 2>&1
-# uenv run ${icon_uenv} --view default -- time ../config/cscs/${build_target}
-# popd >/dev/null 2>&1
-
+# Build all santis targets in parallel
+# WARNING: Without changes to santis.xxx.nvhpc, it requires 3 x 72 processes
+#          so building on the shared partition could fail or just be slow because sequential
+for build_target in ${build_targets[@]}; do
+    build_dir="build/${build_target}"
+    echo "[build_and_squash] ...... Launchng build of  ${build_target} in ${build_dir}. See log file build.${build_target}.o"
+    mkdir -p $build_dir
+    pushd $build_dir >/dev/null 2>&1
+    uenv run ${icon_uenv} --view default -- time ../../config/cscs/${build_target} > "${original_dir}/build.${build_target}.o" 2>&1 &
+    popd >/dev/null 2>&1
+done
+echo "[build_and_squash] ...... Waiting for all build processes to finish"
+wait
 stop=$(date +%s)
 echo "[build_and_squash] ... Building => done in $(elapsed $start $stop)"
 
@@ -127,8 +189,8 @@ popd >/dev/null 2>&1
 
 start=$(date +%s)
 echo "[build_and_squash] ... Squashing"
-ICON_SQUASH_FILE="${ICON_DIRNAME}_${build_target}.squashfs"
-mksquashfs "${ICON_DIRNAME}" "${ICON_SQUASH_FILE}" -no-recovery -noappend -Xcompression-level 3 || exit
+squashed_icon=${squashed_icon:-"${icon_dirname}.squashfs"}
+mksquashfs "${icon_dirname}" "${squashed_icon}" -no-recovery -noappend -Xcompression-level 3 || exit
 stop=$(date +%s)
 echo "[build_and_squash] ... Squashing => done in $(elapsed $start $stop)"
 
@@ -139,7 +201,7 @@ echo "[build_and_squash] ... Squashing => done in $(elapsed $start $stop)"
 
 start=$(date +%s)
 echo "[build_and_squash] ... Retrieving squash"
-rsync -av "${ICON_SQUASH_FILE}" "${original_dir}/."
+rsync -av "${squashed_icon}" "${original_dir}/."
 stop=$(date +%s)
 echo "[build_and_squash] ... Retrieving squash => done in $(elapsed $start $stop)"
 

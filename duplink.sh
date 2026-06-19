@@ -1,12 +1,5 @@
 #!/usr/bin/bash
 
-# Duplicate ORIGIN to TARGET with only symlinks except for specified "concrete"
-# items. Those will either be copied in the case of a file or created in the
-# case of a directory, linking the counterpart ORIGIN content. Any sub-directory
-# along the path from TARGET to a concrete item will be created and the content
-# of ORIGIN will be symlinked.
-
-
 set -e
 shopt -s dotglob
 
@@ -14,22 +7,20 @@ shopt -s dotglob
 # -----
 help_msg(){
     echo
-    echo "duplink.sh"
-    echo "----------"
-    echo "Duplicate ORIGIN to TARGET with only symlinks except for specified concrete"
-    echo "items. Those will either be copied in the case of a file or created in the"
-    echo "case of a directory, linking the counterpart ORIGIN content. Any sub-directory"
-    echo "along the path from TARGET to a concrete item will be created and the content"
-    echo "of ORIGIN will be symlinked."
+    echo "Duplicate ORIGIN to TARGET with only symlinks except for specified actual"
+    echo "items. Those will be created in the case of a directory, linking the"
+    echo "counterpart ORIGIN content, and copied otherwise. Any sub-directory along the"
+    echo "path from TARGET to an actual item will be created and the content of ORIGIN"
+    echo "will be symlinked."
     echo
-    echo "usage:"
-    echo "$0 --origin=ORIGIN --target=TARGET [--concrete=\"path/to/item_1:path/to/item_2\"]"
+    echo "Usage:"
+    echo "$0 --origin=ORIGIN --target=TARGET [--actual=\"path/to/item_1:path/to/item_2\"]"
     echo
 }
 
 # Parse CLI
 # ---------
-concrete_list=()
+actual_list=()
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --origin=*)
@@ -51,22 +42,22 @@ while [ "$#" -gt 0 ]; do
             fi
             shift 1
             ;;
-        --concrete=*)
-            IFS=':' read -ra concrete_list <<< "${1#*=}"
+        --actual=*)
+            IFS=':' read -ra actual_list <<< "${1#*=}"
             shift 1
             ;;
-        --help) help_msg;;
+        --help) help_msg; exit 0;;
         *) echo "ERROR: unrecognized argument: $1" >&2; exit 1;;
     esac
 done
 
 msg="linking items from ${origin} into ${target}"
-if  (( ${#concrete_list} == 0 )); then
+if  (( ${#actual_list} == 0 )); then
     echo "${msg}"
 else
-    echo "${msg}, except following concrete paths:"
-    for concrete_path in ${concrete_list[@]}; do
-        echo "  - ${concrete_path}"
+    echo "${msg}, except following actual paths:"
+    for actual_path in ${actual_list[@]}; do
+        echo "  - ${actual_path}"
     done
 fi
 
@@ -81,13 +72,13 @@ for item in ${origin}/*; do
 done
 popd >/dev/null 2>&1
 
-# Handle concrete items
-# ---------------------
-for concrete_path in ${concrete_list[@]}; do
-    IFS='/' read -ra concrete_path_items <<< "${concrete_path}"
+# Handle actual items
+# -------------------
+for actual_path in ${actual_list[@]}; do
+    IFS='/' read -ra actual_path_items <<< "${actual_path}"
     sub_path=""
     found_origin_link="false"
-    for path_item in ${concrete_path_items[@]}; do
+    for path_item in ${actual_path_items[@]}; do
         [ -z ${sub_path} ] && sub_path="${path_item}" || sub_path+="/${path_item}"
         origin_sub_path="${origin}/${sub_path}"
         target_sub_path="${target}/${sub_path}"
