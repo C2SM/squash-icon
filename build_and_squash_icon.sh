@@ -169,16 +169,21 @@ echo "[build_and_squash] ... Building ICON"
 #          so building on the shared partition could fail or just be slow because sequential
 for build_target in ${build_targets[@]}; do
     build_dir="build/${build_target}"
-    echo "[build_and_squash] ...... Launchng build of  ${build_target} in ${build_dir}. See log file build.${build_target}.o"
-    mkdir -p $build_dir
-    pushd $build_dir >/dev/null 2>&1
-    uenv run ${icon_uenv} --view default -- time ../../config/cscs/${build_target} > "${original_dir}/build.${build_target}.o" 2>&1 &
+    log="build.${build_target}"
+    [ ${on_compute_node} == "true" ] && log+=".${SLURM_JOB_ID}"
+    log+=".o"
+    echo "[build_and_squash] ...... Launchng build ${build_target} in ${build_dir} in the background => See log file ${log}"
+    mkdir -p ${build_dir}
+    pushd ${build_dir} >/dev/null 2>&1
+    uenv run ${icon_uenv} --view default -- time ../../config/cscs/${build_target} > "${original_dir}/${log}" 2>&1 &
     popd >/dev/null 2>&1
 done
 echo "[build_and_squash] ...... Waiting for all build processes to finish"
 wait
 stop=$(date +%s)
 echo "[build_and_squash] ... Building => done in $(elapsed $start $stop)"
+
+echo "${icon_uenv}" > ./ICON_UENV
 
 popd >/dev/null 2>&1
 

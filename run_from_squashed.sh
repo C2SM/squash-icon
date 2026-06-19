@@ -17,7 +17,6 @@ help_msg(){
     echo "$0 [required arguments] [optional arguments]"
     echo
     echo "required arguments"
-    echo "  --uenv=UENV             uenv used at runtime, needs to correspond to build time"
     echo "  --squash=SQUASHED_FILE  icon directory squashed file with icon builds"
     echo "  --target=TARGET         use icon build at \"build/TARGET\" in SQUASHED_FILE (see build_and_squash_icon.sh)"
     echo "  --exp=EXP               icon experiment name"
@@ -47,7 +46,6 @@ wall_time="00:30:00"
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
-        --uenv=*) icon_uenv="${1#*=}"; shift 1;;
         --squash=*) squashed_icon="$(realpath ${1#*=})"; shift 1;;
         --target=*) build_target="${1#*=}"; shift 1;;
         --exp=*) exp="${1#*=}"; shift 1;;
@@ -67,8 +65,8 @@ done
 
 # Check required args
 # -------------------
-required_vars=("icon_uenv" "squashed_icon" "build_target" "exp")
-required_opts=("--uenv" "--squash" "--target" "--exp")
+required_vars=("squashed_icon" "build_target" "exp")
+required_opts=("--squash" "--target" "--exp")
 for ((k=0; k<${#required_vars[@]}; k++)); do
     var_name=${required_vars[k]}
     opt_name=${required_opts[k]}
@@ -80,11 +78,23 @@ for ((k=0; k<${#required_vars[@]}; k++)); do
     fi
 done
 
+# Create mount point
+# ------------------
+mkdir -p ${icon_mount}
+
+# Get icon_uenv from squashed file
+# --------------------------------
+icon_uenv=$(uenv run ${squashed_icon}:${icon_mount} -- cat ${icon_mount}/ICON_UENV)
+if [ -z "${icon_uenv}" ]; then
+    echo "ERROR: could not read ICON_UENV at the root of ${squashed_icon}"
+    exit 1
+fi
+
+
 # ========================================
 # Duplicate icon squashed directory
 # ========================================
 
-mkdir -p ${icon_mount}
 uenv run ${squashed_icon}:${icon_mount} -- ./duplink.sh --origin=${icon_mount} --target=${icon_run} --actual="build/${build_target}/run/set-up.info:build/${build_target}/setting"
 
 
