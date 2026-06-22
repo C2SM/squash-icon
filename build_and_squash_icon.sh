@@ -120,8 +120,8 @@ fi
 
 # Helper functions
 # ----------------
-elapsed(){
-    local seconds=$(($2 - $1))
+elapsed_since(){
+    local seconds=$(( $(date +%s) - $1 ))
     printf '%02d:%02d:%02d\n' $((seconds/3600)) $((seconds%3600/60)) $((seconds%60))
 }
 
@@ -151,8 +151,7 @@ icon_dirname="${icon_name}_${icon_branch}"
 
 git clone --depth 1 --recurse-submodules --shallow-submodules -b "${icon_branch}" "${icon_repo}" "${icon_dirname}"
 
-stop=$(date +%s)
-echo "[build_and_squash] ... Getting ICON => done in $(elapsed $start $stop)"
+echo "[build_and_squash] ... Getting ICON => done in $(elapsed_since ${start})"
 
 
 # ========================================
@@ -161,12 +160,22 @@ echo "[build_and_squash] ... Getting ICON => done in $(elapsed $start $stop)"
 
 pushd "${icon_dirname}" >/dev/null 2>&1
 
-start=$(date +%s)
+all_build_start=$(date +%s)
 echo "[build_and_squash] ... Building ICON"
 
 # Build all santis targets in parallel
 # WARNING: Without changes to santis.xxx.nvhpc, it requires 3 x 72 processes
 #          so building on the shared partition could fail or just be slow because sequential
+
+# Avoid race condition when cloning spack-c2sm for each build
+start=$(date +%s)
+echo "[build_and_squash] ...... Getting sapck-c2sm and spack"
+sapck_c2sm_version="$(cat config/cscs/SPACK_TAG_SANTIS)"
+git clone --depth 1 --recurse-submodules --shallow-submodules -b "${sapck_c2sm_version}" https://github.com/C2SM/spack-c2sm.git spack-c2sm
+echo "[build_and_squash] ...... Getting sapck-c2sm and spack => done in $(elapsed_since ${start})"
+
+build_start=$(date +%s)
+declare -A install_pids
 for build_target in ${build_targets[@]}; do
     build_dir="build/${build_target}"
     log="build.${build_target}"
@@ -176,12 +185,29 @@ for build_target in ${build_targets[@]}; do
     mkdir -p ${build_dir}
     pushd ${build_dir} >/dev/null 2>&1
     uenv run ${icon_uenv} --view default -- time ../../config/cscs/${build_target} > "${original_dir}/${log}" 2>&1 &
+    install_pids[${build_target}]="$!"
     popd >/dev/null 2>&1
 done
+
 echo "[build_and_squash] ...... Waiting for all build processes to finish"
-wait
-stop=$(date +%s)
-echo "[build_and_squash] ... Building => done in $(elapsed $start $stop)"
+while (( ${#install_pids[@]} )); do
+    for build_target in "${!install_pids[@]}"; do
+        pid="${install_pids[${build_target}]}"
+        if ! kill -0 "${pid}" 2>/dev/null; then # kill -0 checks for process existance
+            # we know this pid has exited; retrieve its exit status
+            if ! wait "${pid}"; then
+                echo "ERROR: build ${build_target} failed"
+                exit 1
+            else
+                echo "[build_and_squash] ...... Build ${build_target} => done in $(elapsed_since ${build_start})"
+            fi
+            unset "install_pids[${build_target}]"
+        fi
+    done
+    sleep 1 # in bash, consider a shorter non-integer interval, ie. 0.2
+done
+
+echo "[build_and_squash] ... Building => done in $(elapsed_since ${all_build_start})"
 
 echo "${icon_uenv}" > ./ICON_UENV
 
@@ -196,8 +222,7 @@ start=$(date +%s)
 echo "[build_and_squash] ... Squashing"
 squashed_icon=${squashed_icon:-"${icon_dirname}.squashfs"}
 mksquashfs "${icon_dirname}" "${squashed_icon}" -no-recovery -noappend -Xcompression-level 3 || exit
-stop=$(date +%s)
-echo "[build_and_squash] ... Squashing => done in $(elapsed $start $stop)"
+echo "[build_and_squash] ... Squashing => done in $(elapsed_since ${start})"
 
 
 # ========================================
@@ -207,8 +232,7 @@ echo "[build_and_squash] ... Squashing => done in $(elapsed $start $stop)"
 start=$(date +%s)
 echo "[build_and_squash] ... Retrieving squash"
 rsync -av "${squashed_icon}" "${original_dir}/."
-stop=$(date +%s)
-echo "[build_and_squash] ... Retrieving squash => done in $(elapsed $start $stop)"
+echo "[build_and_squash] ... Retrieving squash => done in $(elapsed_since ${start})"
 
 
 # ========================================
@@ -219,8 +243,7 @@ if [ "${on_compute_node}" == "false" ] && [ "${build_dir}" == "/dev/shm/*" ]; th
     start=$(date +%s)
     echo "[build_and_squash] ... cleaning ${build_dir}"
     rm -rf "${build_dir}"
-    stop=$(date +%s)
-    echo "[build_and_squash] ... cleaning => done in $(elapsed $start $stop)"
+    echo "[build_and_squash] ... cleaning => done in $(elapsed_since ${start})"
 fi
 
 
@@ -228,8 +251,7 @@ fi
 # Accounting
 # ========================================
 
-stop=$(date +%s)
-echo "[build_and_squash] ... build and squash complete in $(elapsed $overall_start $stop)"
+echo "[build_and_squash] ... build and squash complete in $(elapsed_since ${overall_start})"
 
 if [ "${on_compute_node}" == "true" ]; then
     sacct -j "${SLURM_JOB_ID}" --format "JobID, JobName, AllocCPUs, Elapsed, ElapsedRaw, CPUTimeRAW, ConsumedEnergyRaw, MaxRSS, MaxVMSize, AveRSS"
