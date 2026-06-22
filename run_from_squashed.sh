@@ -95,7 +95,8 @@ fi
 # Duplicate icon squashed directory
 # ========================================
 
-uenv run ${squashed_icon}:${icon_mount} -- ./duplink.sh --origin=${icon_mount} --target=${icon_run} --actual="build/${build_target}/run/set-up.info:build/${build_target}/setting"
+# uenv run ${squashed_icon}:${icon_mount} -- ./duplink.sh --origin=${icon_mount} --target=${icon_run} --actual="build/${build_target}/run/set-up.info:build/${build_target}/setting"
+uenv run ${squashed_icon}:${icon_mount} -- ./duplink.sh --origin=${icon_mount} --target=${icon_run} --actual="build/${build_target}/run/set-up.info"
 
 
 # ========================================
@@ -107,8 +108,8 @@ pushd ${icon_run}/build/${build_target} >/dev/null 2>&1
 # enable make_runscripts from the "cloned" directory
 echo "use_builddir=\"$(pwd)\"" >> ./run/set-up.info
 
-# Use the correct icon4py location
-sed -i "s|\..*run\.env$|\. ${icon_run}/build/${build_target}/externals/icon4py/run\.env|" ./setting
+# # Use the correct icon4py location
+# sed -i "s|\..*run\.env$|\. ${icon_run}/build/${build_target}/externals/icon4py/run\.env|" ./setting
 
 popd >/dev/null 2>&1
 
@@ -130,8 +131,11 @@ sbatch_cmd+=" ./exp.${exp}.run"
 echo "Submitting job from $(pwd) with command"
 echo "${sbatch_cmd}"
 
-# Set ICON4PY_BIN for icon4py targets
-[[ "${build_target}" == *"icon4py"* ]] && export ICON4PY_BIN="${icon_run}/externals/icon4py/.venv/bin"
+# Set icon4py paths for icon4py targets
+if [[ "${build_target}" == *"icon4py"* ]]; then
+    export ICON4PY_BIN="${icon_run}/externals/icon4py/.venv/bin"
+    export ICON4PY_RUN_ENV="${icon_run}/build/${build_target}/externals/icon4py/run.env"
+fi
 
 ${sbatch_cmd}
 
