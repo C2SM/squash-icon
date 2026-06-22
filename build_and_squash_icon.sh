@@ -16,7 +16,7 @@ set -e
 # ----
 help_msg(){
     echo
-    echo "Build and squash the icon directory"
+    echo "Build multiple targets asynchronously and squash the icon directory"
     echo
     echo "Usage:"
     echo "$0 [required arguments] [optional arguments]"
