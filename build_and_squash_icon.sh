@@ -176,12 +176,14 @@ echo "[build_and_squash] ...... Getting sapck-c2sm and spack => done in $(elapse
 
 build_start=$(date +%s)
 declare -A install_pids
+
+# Launching async builds in the background
 for build_target in ${build_targets[@]}; do
     build_dir="build/${build_target}"
     log="build.${build_target}"
     [ ${on_compute_node} == "true" ] && log+=".${SLURM_JOB_ID}"
     log+=".o"
-    echo "[build_and_squash] ...... Launchng build ${build_target} in ${build_dir} in the background => See log file ${log}"
+    echo "[build_and_squash] ...... Launchng build ${build_target} in ${build_dir} => log at ${log}"
     mkdir -p ${build_dir}
     pushd ${build_dir} >/dev/null 2>&1
     uenv run ${icon_uenv} --view default -- time ../../config/cscs/${build_target} > "${original_dir}/${log}" 2>&1 &
@@ -189,7 +191,7 @@ for build_target in ${build_targets[@]}; do
     popd >/dev/null 2>&1
 done
 
-echo "[build_and_squash] ...... Waiting for all build processes to finish"
+# Waiting for build processes to complete
 while (( ${#install_pids[@]} )); do
     for build_target in "${!install_pids[@]}"; do
         pid="${install_pids[${build_target}]}"
@@ -204,7 +206,7 @@ while (( ${#install_pids[@]} )); do
             unset "install_pids[${build_target}]"
         fi
     done
-    sleep 1 # in bash, consider a shorter non-integer interval, ie. 0.2
+    sleep 1
 done
 
 echo "[build_and_squash] ... Building => done in $(elapsed_since ${all_build_start})"
