@@ -12,8 +12,6 @@ set -e
 # Init
 # ========================================
 
-# TODO: enable build target selection
-
 # Help
 # ----
 help_msg(){
