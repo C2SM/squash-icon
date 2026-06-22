@@ -56,7 +56,7 @@ while [ "$#" -gt 0 ]; do
         --repo=*) icon_repo="${1#*=}"; shift 1;;
         --branch=*) icon_branch="${1#*=}"; shift 1;;
         --squash=*) squashed_icon="$(realpath ${1#*=})"; shift 1;;
-        --target=*)
+        --targets=*)
             IFS=',' read -ra build_targets <<< "${1#*=}"
             shift 1
             ;;
