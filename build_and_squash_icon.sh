@@ -30,7 +30,7 @@ help_msg(){
     echo "  --squash=SQUASHED_FILE         squashed filename for the icon directory, default infered from ICON_REPO and ICON_BRANCH"
     echo "  --targets=TARGET1,...          comma separated list of build targets, default: santis.cpu.nvhpc,santis.gpu.nvhpc,santis.icon4py.nvhpc"
     echo "  --gitlab-dkrz-token TOKEN      clone from gitlab.dkrz.de with TOKEN instead of ssh"
-    echo "  --github-tokenc TOKEN          clone from github.com with TOKEN instead of ssh"
+    echo "  --github-token TOKEN           clone from github.com with TOKEN instead of ssh"
 }
 
 # Set defaults
