@@ -1,6 +1,10 @@
 # Squash ICON
 
-The aim of this repo is to serve either as a tool, originally for CI, or as a base for your own use case.
+The aim of this repo is to explore the workflow
+- build ICON
+- squash the resulting ICON repository
+- Run ICON
+It can serve either as a tool, originally for CI, or as a base for your own use case.
 
 The repository provides 2 scripts, `build_and_squash_icon.sh` and `run_from_squashed.sh` (plus a helper `duplink.sh` script), that can help in many regards compared to classical builds.
 - Several targets are stored in a single squashed file, which is pretty useful for CI or coupled runs requiring multiple executables.
@@ -8,8 +12,8 @@ The repository provides 2 scripts, `build_and_squash_icon.sh` and `run_from_squa
   - targets are built asynchronously
   - building on `/dev/shm` is faster than on drive
   - squashing requires a handful of seconds and retrieving a squashed file from `/dev/shm` is virtually unnoticeable while retrieving a repo full of many small files takes minutes.
-  All in all building `santis.cpu.nvhpc`, `santis.gpu.nvhpc` and `santis.icon4py.nvhpc` takes 14 min.
-- Accessing a lot of small files, typically for virtual environments like the `ICON4Py`one, is faster.
+  For instance building `santis.cpu.nvhpc`, `santis.gpu.nvhpc` and `santis.icon4py.nvhpc` takes 14 min.
+- Accessing a lot of small files, typically for virtual environments like the `ICON4Py` one, is faster.
 
 ## Build and squash
 
