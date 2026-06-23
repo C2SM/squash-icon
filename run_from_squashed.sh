@@ -133,7 +133,7 @@ echo "${sbatch_cmd}"
 
 # Set icon4py paths for icon4py targets
 if [[ "${build_target}" == *"icon4py"* ]]; then
-    export ICON4PY_BIN="${icon_run}/externals/icon4py/.venv/bin"
+    export ICON4PY_VENV="${icon_run}/externals/icon4py/.venv"
     export ICON4PY_RUN_ENV="${icon_run}/build/${build_target}/externals/icon4py/run.env"
 fi
 
