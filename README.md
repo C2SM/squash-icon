@@ -1,9 +1,9 @@
 # Squash ICON
 
 The aim of this repo is to explore the workflow
-- build ICON
-- squash the resulting ICON repository
-- Run ICON
+1. build ICON
+2. squash the resulting ICON repository
+3. Run ICON
 It can serve either as a tool, originally for CI, or as a base for your own use case.
 
 The repository provides 2 scripts, `build_and_squash_icon.sh` and `run_from_squashed.sh` (plus a helper `duplink.sh` script), that can help in many regards compared to classical builds.
