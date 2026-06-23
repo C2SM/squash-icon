@@ -162,8 +162,9 @@ all_build_start=$(date +%s)
 echo "[build_and_squash] ... Building ICON"
 
 # Build all santis targets in parallel
-# WARNING: Without changes to santis.xxx.nvhpc, it requires 3 x 72 processes
-#          so building on the shared partition could fail or just be slow because sequential
+# WARNING: Without changes to santis.xxx.nvhpc, it requires n_targets x 72 processes
+#          so building on the shared partition using a single socket could fail or
+#          just be slow because sequential
 
 # Avoid race condition when cloning spack-c2sm for each build
 start=$(date +%s)
@@ -181,7 +182,7 @@ for build_target in ${build_targets[@]}; do
     log="build.${build_target}"
     [ ${on_compute_node} == "true" ] && log+=".${SLURM_JOB_ID}"
     log+=".o"
-    echo "[build_and_squash] ...... Launchng build ${build_target} in ${build_dir} => log at ${log}"
+    echo "[build_and_squash] ...... Launchng build ${build_target} => log at ${log}"
     mkdir -p ${build_dir}
     pushd ${build_dir} >/dev/null 2>&1
     uenv run ${icon_uenv} --view default -- time ../../config/cscs/${build_target} > "${original_dir}/${log}" 2>&1 &
@@ -190,6 +191,7 @@ for build_target in ${build_targets[@]}; do
 done
 
 # Waiting for build processes to complete
+# NOTE: That can be simplified with a recent version of bash using `wait -n -p PID`
 while (( ${#install_pids[@]} )); do
     for build_target in "${!install_pids[@]}"; do
         pid="${install_pids[${build_target}]}"
