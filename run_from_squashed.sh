@@ -18,12 +18,14 @@ help_msg(){
     echo
     echo "required arguments"
     echo "  --squash=SQUASHED_FILE  icon directory squashed file with icon builds"
-    echo "  --target=TARGET         use icon build at \"build/TARGET\" in SQUASHED_FILE (see build_and_squash_icon.sh)"
+    echo "  --target=TARGET         use icon build at \"build/TARGET\" in SQUASHED_FILE"
+    echo "                          (see build_and_squash_icon.sh)"
     echo "  --exp=EXP               icon experiment name"
     echo
     echo "optional arguments"
     echo "  --mount=MOUNT_POINT     mount point for SQUASHED_FILE, default: \"./ICON_MOUNT\""
-    echo "  --run=ICON_RUN          dupplicate icon from ICON_MOUNT to ICON_RUN using duplink.sh, default: \"./ICON_RUN\""
+    echo "  --run=ICON_RUN          dupplicate directory from MOUNT_POINT where the experiment runs,"
+    echo "                          default: \"./ICON_RUN\""
     echo "  --account=ACCOUNT       SLURM account, default: first entry of \$(groups)"
     echo "  --partition=PARTITION   use SLURM partition PARTITION, default: \"debug\""
     echo "  --time=TIME             request --time=TIME to SLURM, default: \"00:30:00\""

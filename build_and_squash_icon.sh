@@ -16,7 +16,8 @@ set -e
 # ----
 help_msg(){
     echo
-    echo "Build multiple targets asynchronously and squash the icon directory"
+    echo "Build multiple out-of-source targets asynchronously and squash the icon directory."
+    echo "Targets are beeing built in \`build/TARGET_NAME\`"
     echo
     echo "Usage:"
     echo "$0 [required arguments] [optional arguments]"
@@ -27,8 +28,10 @@ help_msg(){
     echo "optional arguments"
     echo "  --repo=ICON_REPO               icon git repository, default: git@gitlab.dkrz.de:icon/icon-nwp.git"
     echo "  --branch=ICON_BRANCH           branch of ICON_REPO, default: master"
-    echo "  --squash=SQUASHED_FILE         squashed path for the icon directory, default: in current directory, filename inferred from ICON_REPO and ICON_BRANCH"
-    echo "  --targets=TARGET1,...          comma separated list of build targets, default: santis.cpu.nvhpc,santis.gpu.nvhpc,santis.icon4py.nvhpc"
+    echo "  --squash=SQUASHED_FILE         squashed path for the icon directory,"
+    echo "                                 default: in current directory, filename inferred from ICON_REPO and ICON_BRANCH"
+    echo "  --targets=TARGET1,...          comma separated list of build targets,"
+    echo "                                 default: santis.cpu.nvhpc,santis.gpu.nvhpc,santis.icon4py.nvhpc"
     echo "  --gitlab-dkrz-token TOKEN      clone from gitlab.dkrz.de with TOKEN instead of ssh"
     echo "  --github-token TOKEN           clone from github.com with TOKEN instead of ssh"
 }

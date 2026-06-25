@@ -26,7 +26,8 @@ Usage is given by `build_and_squash_icon.sh --help`
 ```
 ❯ ./build_and_squash_icon.sh --help
 
-Build multiple targets asynchronously and squash the icon directory
+Build multiple out-of-source targets asynchronously and squash the icon directory.
+Targets are beeing built in `build/TARGET_NAME`
 
 Usage:
 ./build_and_squash_icon.sh [required arguments] [optional arguments]
@@ -37,8 +38,10 @@ required arguments
 optional arguments
   --repo=ICON_REPO               icon git repository, default: git@gitlab.dkrz.de:icon/icon-nwp.git
   --branch=ICON_BRANCH           branch of ICON_REPO, default: master
-  --squash=SQUASHED_FILE         squashed path for the icon directory, default: in current directory, filename inferred from ICON_REPO and ICON_BRANCH
-  --targets=TARGET1,...          comma separated list of build targets, default: santis.cpu.nvhpc,santis.gpu.nvhpc,santis.icon4py.nvhpc
+  --squash=SQUASHED_FILE         squashed path for the icon directory,
+                                 default: in current directory, filename inferred from ICON_REPO and ICON_BRANCH
+  --targets=TARGET1,...          comma separated list of build targets,
+                                 default: santis.cpu.nvhpc,santis.gpu.nvhpc,santis.icon4py.nvhpc
   --gitlab-dkrz-token TOKEN      clone from gitlab.dkrz.de with TOKEN instead of ssh
   --github-token TOKEN           clone from github.com with TOKEN instead of ssh
 ```
@@ -67,12 +70,14 @@ Usage:
 
 required arguments
   --squash=SQUASHED_FILE  icon directory squashed file with icon builds
-  --target=TARGET         use icon build at "build/TARGET" in SQUASHED_FILE (see build_and_squash_icon.sh)
+  --target=TARGET         use icon build at "build/TARGET" in SQUASHED_FILE
+                          (see build_and_squash_icon.sh)
   --exp=EXP               icon experiment name
 
 optional arguments
   --mount=MOUNT_POINT     mount point for SQUASHED_FILE, default: "./ICON_MOUNT"
-  --run=ICON_RUN          dupplicate icon from ICON_MOUNT to ICON_RUN using duplink.sh, default: "./ICON_RUN"
+  --run=ICON_RUN          dupplicate directory from MOUNT_POINT where the experiment runs,
+                          default: "./ICON_RUN"
   --account=ACCOUNT       SLURM account, default: first entry of $(groups)
   --partition=PARTITION   use SLURM partition PARTITION, default: "debug"
   --time=TIME             request --time=TIME to SLURM, default: "00:30:00"
