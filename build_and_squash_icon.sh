@@ -27,7 +27,7 @@ help_msg(){
     echo "optional arguments"
     echo "  --repo=ICON_REPO               icon git repository, default: git@gitlab.dkrz.de:icon/icon-nwp.git"
     echo "  --branch=ICON_BRANCH           branch of ICON_REPO, default: master"
-    echo "  --squash=SQUASHED_FILE         squashed filename for the icon directory, default infered from ICON_REPO and ICON_BRANCH"
+    echo "  --squash=SQUASHED_FILE         squashed path for the icon directory, default: in current directory, filename inferred from ICON_REPO and ICON_BRANCH"
     echo "  --targets=TARGET1,...          comma separated list of build targets, default: santis.cpu.nvhpc,santis.gpu.nvhpc,santis.icon4py.nvhpc"
     echo "  --gitlab-dkrz-token TOKEN      clone from gitlab.dkrz.de with TOKEN instead of ssh"
     echo "  --github-token TOKEN           clone from github.com with TOKEN instead of ssh"
@@ -41,7 +41,7 @@ icon_uenv=""
 # Optional args
 icon_repo="git@gitlab.dkrz.de:icon/icon-nwp.git"
 icon_branch="master"
-squashed_icon=""
+squashed_icon_path=""
 build_targets=("santis.cpu.nvhpc" "santis.gpu.nvhpc" "santis.icon4py.nvhpc")
 gitlab_dkrz_token=""
 github_token=""
@@ -53,7 +53,7 @@ while [ "$#" -gt 0 ]; do
         --uenv=*) icon_uenv="${1#*=}"; shift 1;;
         --repo=*) icon_repo="${1#*=}"; shift 1;;
         --branch=*) icon_branch="${1#*=}"; shift 1;;
-        --squash=*) squashed_icon="$(realpath ${1#*=})"; shift 1;;
+        --squash=*) squashed_icon_path="$(realpath ${1#*=})"; shift 1;;
         --targets=*)
             IFS=',' read -ra build_targets <<< "${1#*=}"
             shift 1
@@ -221,9 +221,9 @@ popd >/dev/null 2>&1
 # ========================================
 
 start=$(date +%s)
+icon_squash_dev=$(realpath "./icon.squashfs")
 echo "[build_and_squash] ... Squashing"
-squashed_icon=${squashed_icon:-"${icon_dirname}.squashfs"}
-mksquashfs "${icon_dirname}" "${squashed_icon}" -no-recovery -noappend -Xcompression-level 3 || exit
+uenv run ${icon_uenv} --view default -- mksquashfs "${icon_dirname}" "${icon_squash_dev}" -no-recovery -noappend -Xcompression-level 3 || exit
 echo "[build_and_squash] ... Squashing => done in $(elapsed_since ${start})"
 
 
@@ -232,8 +232,9 @@ echo "[build_and_squash] ... Squashing => done in $(elapsed_since ${start})"
 # ========================================
 
 start=$(date +%s)
+squashed_icon_path=${squashed_icon_path:-"${original_dir}/${icon_dirname}.squashfs"}
 echo "[build_and_squash] ... Retrieving squash"
-rsync -av "${squashed_icon}" "${original_dir}/."
+rsync -av "${icon_squash_dev}" "${squashed_icon_path}"
 echo "[build_and_squash] ... Retrieving squash => done in $(elapsed_since ${start})"
 
 
