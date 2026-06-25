@@ -9,9 +9,10 @@ It can serve either as a tool, originally for CI, or as a base for your own use 
 
 The repository provides 2 scripts, `build_and_squash_icon.sh` and `run_from_squashed.sh` (plus a helper `duplink.sh` script), that can help in many regards compared to classical builds.
 - Several targets are stored in a single squashed file, which is pretty useful for CI or coupled runs requiring multiple executables.
-- The build process is faster as
-  - targets are built asynchronously
-  - building on `/dev/shm` is faster than on drive
+- Obviously the number of files is reduced from tens of thousands to 1.
+- The build process is faster as:
+  - targets are being built asynchronously.
+  - building on `/dev/shm` is faster than on drive.
   - squashing requires a handful of seconds and retrieving a squashed file from `/dev/shm` is virtually unnoticeable while retrieving a repo full of many small files takes minutes.
   For instance building `santis.cpu.nvhpc`, `santis.gpu.nvhpc` and `santis.icon4py.nvhpc` takes 14 min.
 - Accessing a lot of small files, typically for virtual environments like the `ICON4Py` one, is faster.
@@ -83,7 +84,7 @@ optional arguments
   --time=TIME             request --time=TIME to SLURM, default: "00:30:00"
 ```
 
-A typical call to the script would like
+A typical call to the script would look like this:
 
 ``` shell
 ./run_from_squashed.sh --squash="add_icon4py_26.1.squashfs" --target="santis.icon4py.nvhpc" --exp="mch_icon-ch2_small" --run="MY_ICON_DUPLICATE"
