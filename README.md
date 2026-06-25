@@ -56,7 +56,7 @@ Interactive run is also possible for testing and runs on disk, not `/dev/shm`. S
 
 ## Run from the squashed directory
 
-The `run_from_squashed.sh` script enables running an existing ICON experiment from the squashed ICON file. Since squashed files are read-only, it duplicates the directory with only links except for files that need to be modified using the `duplink.sh` script. Using it out-of-the-box, only one file needs modification (`run/set-up.info`) but if more are required, you can modify the script and pass more "actual" paths to `duplink.sh` (see `duplink.sh --help`). Then it creates the experiment run script using the classical ICON scripts and finally submits the run script by mounting the ICON squashed file alongside the uenv used at build time. The later doesn't need to be explicitly specified since it's found in the squashed file.
+The `run_from_squashed.sh` script enables running an existing ICON experiment from the squashed ICON file. Since squashed files are read-only, it duplicates the directory with only links except for files that need to be modified using the `duplink.sh` script. Using it out-of-the-box, only one file needs modification (`run/set-up.info`). If more are required, when modifying `run_from_squashed.sh`, pass more "actual" paths to `duplink.sh` with something like `--actual=first/apth:second/path` (see `duplink.sh --help`). Then it creates the experiment run script using the classical ICON scripts and finally submits the run script, mounting the ICON squashed file alongside the uenv used at build time. The later doesn't need to be explicitly specified since it's found in the squashed file.
 
 Usage is given by `run_from_squashed.sh --help`
 
