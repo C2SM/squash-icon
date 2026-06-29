@@ -102,6 +102,5 @@ for actual_path in ${actual_list[@]}; do
                 cp -a ${origin_sub_path} ${target_sub_path}
             fi
         fi
-        origin_sub_path="${origin}/${sub_path}"
     done
 done
