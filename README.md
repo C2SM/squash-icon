@@ -21,7 +21,7 @@ The repository provides 2 scripts, `build_and_squash_icon.sh` and `run_from_squa
 ## Build and squash
 
 `build_and_squash_icon.sh` enables asynchronous building of multiple ICON targets on `/dev/shm` and squashing the resulting directory in a single file.
-Builds are done in an out-of-source fashion in directories named after the target in the `build` directory at the root of the ICON clone, e.g. `build/santis.xxx.nvhpc`. The script also dumps the uenv version used at build time so that `run_from_squashed.sh` directly uses it without transparently, removing the need to keep the link between the uenv and the build.
+Builds are done in an out-of-source fashion in directories named after the target in the `build` directory at the root of the ICON clone, e.g. `build/santis.xxx.nvhpc`. The script also dumps the uenv version used at build time so that `run_from_squashed.sh` directly uses it transparently, removing the need to keep the link between the uenv and the build.
 
 Usage is given by `build_and_squash_icon.sh --help`
 
