@@ -14,6 +14,7 @@ The repository provides 2 scripts, `build_and_squash_icon.sh` and `run_from_squa
   - targets are being built asynchronously.
   - building on `/dev/shm` is faster than on drive.
   - squashing requires a handful of seconds and retrieving a squashed file from `/dev/shm` is virtually unnoticeable while retrieving a repo full of many small files takes minutes.
+
   For instance building `santis.cpu.nvhpc`, `santis.gpu.nvhpc` and `santis.icon4py.nvhpc` takes 14 min.
 - Accessing a lot of small files, typically for virtual environments like the `ICON4Py` one, is faster.
 
