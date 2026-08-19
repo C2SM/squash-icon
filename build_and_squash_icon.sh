@@ -32,8 +32,8 @@ help_msg(){
     echo "                                 default: in current directory, filename inferred from ICON_REPO and ICON_BRANCH"
     echo "  --targets=TARGET1,...          comma separated list of build targets,"
     echo "                                 default: santis.cpu.nvhpc,santis.gpu.nvhpc,santis.icon4py.nvhpc"
-    echo "  --gitlab-dkrz-token TOKEN      clone from gitlab.dkrz.de with TOKEN instead of ssh"
-    echo "  --github-token TOKEN           clone from github.com with TOKEN instead of ssh"
+    echo "  --gitlab-dkrz-token=TOKEN      clone from gitlab.dkrz.de with TOKEN instead of ssh"
+    echo "  --github-token=TOKEN           clone from github.com with TOKEN instead of ssh"
 }
 
 # Set defaults
