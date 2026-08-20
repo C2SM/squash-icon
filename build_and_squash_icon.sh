@@ -113,7 +113,7 @@ fi
 # Build dir
 # ---------
 if [ "${on_compute_node}" == "true" ]; then
-    build_dir="/dev/shm/${USER}/build_and_squash_icon"
+    build_dir="/dev/shm/${USER}/squash_icon"
 else
     script_dir=$(cd "$(dirname "$0")"; pwd)
     build_dir="${script_dir}/build_and_squash_icon"
