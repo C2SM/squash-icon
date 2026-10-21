@@ -26,7 +26,7 @@ help_msg(){
     echo "  --uenv=UENV                    icon uenv"
     echo
     echo "optional arguments"
-    echo "  --repo=ICON_REPO               icon git repository, default: git@gitlab.dkrz.de:icon/icon-nwp.git"
+    echo "  --repo=ICON_REPO               icon git repository, default: git@git.gitlab.dkrz.de:icon/icon-nwp.git"
     echo "  --branch=ICON_BRANCH           branch of ICON_REPO, default: master"
     echo "  --commit=ICON_COMMIT           check out ICON_COMMIT of ICON_BRANCH instead of its head"
     echo "  --squash=SQUASHED_FILE         squashed path for the icon directory,"
@@ -46,7 +46,7 @@ help_msg(){
 icon_uenv=""
 
 # Optional args
-icon_repo="git@gitlab.dkrz.de:icon/icon-nwp.git"
+icon_repo="git@git.gitlab.dkrz.de:icon/icon-nwp.git"
 icon_branch="master"
 icon_commit=""
 squashed_icon_path=""
@@ -101,9 +101,12 @@ done
 # -----------------
 k=0
 if [ -n "${gitlab_dkrz_token}" ]; then
-    export "GIT_CONFIG_KEY_${k}=url.https://oauth2:${gitlab_dkrz_token}@gitlab.dkrz.de/.insteadOf"
-    export "GIT_CONFIG_VALUE_${k}=git@gitlab.dkrz.de:"
-    (( k += 1 ))
+    # Rewrite both the current and the deprecated DKRZ ssh hosts
+    for ssh_host in "git@git.gitlab.dkrz.de:" "git@gitlab.dkrz.de:"; do
+        export "GIT_CONFIG_KEY_${k}=url.https://oauth2:${gitlab_dkrz_token}@gitlab.dkrz.de/.insteadOf"
+        export "GIT_CONFIG_VALUE_${k}=${ssh_host}"
+        (( k += 1 ))
+    done
 fi
 if [ -n "${github_token}" ]; then
     export "GIT_CONFIG_KEY_${k}=url.https://oauth2:${github_token}@github.com/.insteadOf"
