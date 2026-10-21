@@ -40,12 +40,30 @@ required arguments
 optional arguments
   --repo=ICON_REPO               icon git repository, default: git@gitlab.dkrz.de:icon/icon-nwp.git
   --branch=ICON_BRANCH           branch of ICON_REPO, default: master
+  --commit=ICON_COMMIT           check out ICON_COMMIT of ICON_BRANCH instead of its head
   --squash=SQUASHED_FILE         squashed path for the icon directory,
                                  default: in current directory, filename inferred from ICON_REPO and ICON_BRANCH
   --targets=TARGET1,...          comma separated list of build targets,
                                  default: santis.cpu.nvhpc,santis.gpu.nvhpc,santis.icon4py.nvhpc
-  --gitlab-dkrz-token TOKEN      clone from gitlab.dkrz.de with TOKEN instead of ssh
-  --github-token TOKEN           clone from github.com with TOKEN instead of ssh
+  --patches=PATCH_DIR            apply all patch files in PATCH_DIR to the icon clone
+  --spack-envs=SPACK_ENVS_DIR    for each directory VARIANT in SPACK_ENVS_DIR, copy its content over
+                                 config/cscs/spack/VARIANT in the icon clone, e.g. to change spack.yaml
+  --gitlab-dkrz-token=TOKEN      clone from gitlab.dkrz.de with TOKEN instead of ssh
+  --github-token=TOKEN           clone from github.com with TOKEN instead of ssh
+```
+
+### Customizing the build
+
+Patches and spack environments are applied right after cloning, before any target is built:
+- `--patches=PATCH_DIR` applies every file of `PATCH_DIR` with `git apply`, in alphabetical order.
+- `--spack-envs=SPACK_ENVS_DIR` copies each sub-directory `SPACK_ENVS_DIR/VARIANT` over `config/cscs/spack/VARIANT`. Building a different flavor, e.g. with another `spack.yaml`, then only requires providing `SPACK_ENVS_DIR/santis_gpu_double/spack.yaml`.
+
+For example:
+
+``` shell
+sbatch --partition=normal --time=01:00:00 ./build_and_squash_icon.sh --uenv="icon/26.2:2612149565" \
+    --commit=0123abc --targets=santis.gpu.nvhpc --patches=./patches --spack-envs=./spack \
+    --squash=/capstor/store/cscs/userlab/xyz/icon_builds/my_flavor.squashfs
 ```
 
 The intended usage is to submit it as a job, e.g. with

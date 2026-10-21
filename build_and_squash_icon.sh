@@ -28,10 +28,14 @@ help_msg(){
     echo "optional arguments"
     echo "  --repo=ICON_REPO               icon git repository, default: git@gitlab.dkrz.de:icon/icon-nwp.git"
     echo "  --branch=ICON_BRANCH           branch of ICON_REPO, default: master"
+    echo "  --commit=ICON_COMMIT           check out ICON_COMMIT of ICON_BRANCH instead of its head"
     echo "  --squash=SQUASHED_FILE         squashed path for the icon directory,"
     echo "                                 default: in current directory, filename inferred from ICON_REPO and ICON_BRANCH"
     echo "  --targets=TARGET1,...          comma separated list of build targets,"
     echo "                                 default: santis.cpu.nvhpc,santis.gpu.nvhpc,santis.icon4py.nvhpc"
+    echo "  --patches=PATCH_DIR            apply all patch files in PATCH_DIR to the icon clone"
+    echo "  --spack-envs=SPACK_ENVS_DIR    for each directory VARIANT in SPACK_ENVS_DIR, copy its content over"
+    echo "                                 config/cscs/spack/VARIANT in the icon clone, e.g. to change spack.yaml"
     echo "  --gitlab-dkrz-token=TOKEN      clone from gitlab.dkrz.de with TOKEN instead of ssh"
     echo "  --github-token=TOKEN           clone from github.com with TOKEN instead of ssh"
 }
@@ -44,8 +48,11 @@ icon_uenv=""
 # Optional args
 icon_repo="git@gitlab.dkrz.de:icon/icon-nwp.git"
 icon_branch="master"
+icon_commit=""
 squashed_icon_path=""
 build_targets=("santis.cpu.nvhpc" "santis.gpu.nvhpc" "santis.icon4py.nvhpc")
+patch_dir=""
+spack_envs_dir=""
 gitlab_dkrz_token=""
 github_token=""
 
@@ -56,7 +63,10 @@ while [ "$#" -gt 0 ]; do
         --uenv=*) icon_uenv="${1#*=}"; shift 1;;
         --repo=*) icon_repo="${1#*=}"; shift 1;;
         --branch=*) icon_branch="${1#*=}"; shift 1;;
-        --squash=*) squashed_icon_path="$(realpath ${1#*=})"; shift 1;;
+        --commit=*) icon_commit="${1#*=}"; shift 1;;
+        --squash=*) squashed_icon_path="$(realpath -m ${1#*=})"; shift 1;;
+        --patches=*) patch_dir="$(realpath ${1#*=})"; shift 1;;
+        --spack-envs=*) spack_envs_dir="$(realpath ${1#*=})"; shift 1;;
         --targets=*)
             IFS=',' read -ra build_targets <<< "${1#*=}"
             shift 1
@@ -150,7 +160,38 @@ icon_name=$(basename ${icon_repo})
 icon_name=${icon_name%%.git}
 icon_dirname="${icon_name}_${icon_branch}"
 
-git clone --depth 1 --recurse-submodules --shallow-submodules -b "${icon_branch}" "${icon_repo}" "${icon_dirname}"
+if [ -n "${icon_commit}" ]; then
+    # Blobless clone keeps the history needed to reach ICON_COMMIT while staying fast
+    git clone --filter=blob:none --no-checkout -b "${icon_branch}" "${icon_repo}" "${icon_dirname}"
+    pushd "${icon_dirname}" >/dev/null 2>&1
+    git checkout "${icon_commit}"
+    git submodule update --init --recursive --depth 1
+else
+    git clone --depth 1 --recurse-submodules --shallow-submodules -b "${icon_branch}" "${icon_repo}" "${icon_dirname}"
+    pushd "${icon_dirname}" >/dev/null 2>&1
+fi
+
+# Apply patches
+# -------------
+if [ -n "${patch_dir}" ]; then
+    for patch_file in "${patch_dir}"/*; do
+        [ -f "${patch_file}" ] || continue
+        echo "[build_and_squash] ...... Applying ${patch_file}"
+        git apply "${patch_file}"
+    done
+fi
+
+# Overlay spack environments
+# --------------------------
+if [ -n "${spack_envs_dir}" ]; then
+    for spack_env in "${spack_envs_dir}"/*/; do
+        [ -d "${spack_env}" ] || continue
+        variant="$(basename ${spack_env})"
+        echo "[build_and_squash] ...... Overlaying spack environment ${variant}"
+        mkdir -p "./config/cscs/spack/${variant}"
+        rsync -a "${spack_env}" "./config/cscs/spack/${variant}/"
+    done
+fi
 
 echo "[build_and_squash] ... Getting ICON => done in $(elapsed_since ${start})"
 
@@ -158,8 +199,6 @@ echo "[build_and_squash] ... Getting ICON => done in $(elapsed_since ${start})"
 # ========================================
 # Build
 # ========================================
-
-pushd "${icon_dirname}" >/dev/null 2>&1
 
 all_build_start=$(date +%s)
 echo "[build_and_squash] ... Building ICON"
@@ -237,6 +276,7 @@ echo "[build_and_squash] ... Squashing => done in $(elapsed_since ${start})"
 start=$(date +%s)
 squashed_icon_path=${squashed_icon_path:-"${original_dir}/${icon_dirname}.squashfs"}
 echo "[build_and_squash] ... Retrieving squash"
+mkdir -p "$(dirname "${squashed_icon_path}")"
 rsync -av "${icon_squash_dev}" "${squashed_icon_path}"
 echo "[build_and_squash] ... Retrieving squash => done in $(elapsed_since ${start})"
 
