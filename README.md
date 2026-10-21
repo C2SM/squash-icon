@@ -46,23 +46,23 @@ optional arguments
   --targets=TARGET1,...          comma separated list of build targets,
                                  default: santis.cpu.nvhpc,santis.gpu.nvhpc,santis.icon4py.nvhpc
   --patches=PATCH_DIR            apply all patch files in PATCH_DIR to the icon clone
-  --spack-envs=SPACK_ENVS_DIR    for each directory VARIANT in SPACK_ENVS_DIR, copy its content over
-                                 config/cscs/spack/VARIANT in the icon clone, e.g. to change spack.yaml
+  --cscs-config=CSCS_CONFIG_DIR  copy the content of CSCS_CONFIG_DIR over config/cscs in the icon clone,
+                                 e.g. CSCS_CONFIG_DIR/spack/VARIANT/spack.yaml or additional target scripts
   --gitlab-dkrz-token=TOKEN      clone from gitlab.dkrz.de with TOKEN instead of ssh
   --github-token=TOKEN           clone from github.com with TOKEN instead of ssh
 ```
 
 ### Customizing the build
 
-Patches and spack environments are applied right after cloning, before any target is built:
+Patches and the `config/cscs` overlay are applied right after cloning, before any target is built:
 - `--patches=PATCH_DIR` applies every file of `PATCH_DIR` with `git apply`, in alphabetical order.
-- `--spack-envs=SPACK_ENVS_DIR` copies each sub-directory `SPACK_ENVS_DIR/VARIANT` over `config/cscs/spack/VARIANT`. Building a different flavor, e.g. with another `spack.yaml`, then only requires providing `SPACK_ENVS_DIR/santis_gpu_double/spack.yaml`.
+- `--cscs-config=CSCS_CONFIG_DIR` copies the content of `CSCS_CONFIG_DIR` over `config/cscs`, adding or replacing files. Building a different flavor, e.g. with another `spack.yaml`, then only requires providing `CSCS_CONFIG_DIR/spack/santis_gpu_double/spack.yaml`. New targets are added by providing their build script, e.g. `CSCS_CONFIG_DIR/santis.my_flavor.nvhpc`, and listing it in `--targets`.
 
 For example:
 
 ``` shell
 sbatch --partition=normal --time=01:00:00 ./build_and_squash_icon.sh --uenv="icon/26.2:2612149565" \
-    --commit=0123abc --targets=santis.gpu.nvhpc --patches=./patches --spack-envs=./spack \
+    --commit=0123abc --targets=santis.gpu.nvhpc --patches=./patches --cscs-config=./config_cscs \
     --squash=/capstor/store/cscs/userlab/xyz/icon_builds/my_flavor.squashfs
 ```
 

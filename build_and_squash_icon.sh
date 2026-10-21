@@ -34,8 +34,8 @@ help_msg(){
     echo "  --targets=TARGET1,...          comma separated list of build targets,"
     echo "                                 default: santis.cpu.nvhpc,santis.gpu.nvhpc,santis.icon4py.nvhpc"
     echo "  --patches=PATCH_DIR            apply all patch files in PATCH_DIR to the icon clone"
-    echo "  --spack-envs=SPACK_ENVS_DIR    for each directory VARIANT in SPACK_ENVS_DIR, copy its content over"
-    echo "                                 config/cscs/spack/VARIANT in the icon clone, e.g. to change spack.yaml"
+    echo "  --cscs-config=CSCS_CONFIG_DIR  copy the content of CSCS_CONFIG_DIR over config/cscs in the icon clone,"
+    echo "                                 e.g. CSCS_CONFIG_DIR/spack/VARIANT/spack.yaml or additional target scripts"
     echo "  --gitlab-dkrz-token=TOKEN      clone from gitlab.dkrz.de with TOKEN instead of ssh"
     echo "  --github-token=TOKEN           clone from github.com with TOKEN instead of ssh"
 }
@@ -52,7 +52,7 @@ icon_commit=""
 squashed_icon_path=""
 build_targets=("santis.cpu.nvhpc" "santis.gpu.nvhpc" "santis.icon4py.nvhpc")
 patch_dir=""
-spack_envs_dir=""
+cscs_config_dir=""
 gitlab_dkrz_token=""
 github_token=""
 
@@ -66,7 +66,7 @@ while [ "$#" -gt 0 ]; do
         --commit=*) icon_commit="${1#*=}"; shift 1;;
         --squash=*) squashed_icon_path="$(realpath -m ${1#*=})"; shift 1;;
         --patches=*) patch_dir="$(realpath ${1#*=})"; shift 1;;
-        --spack-envs=*) spack_envs_dir="$(realpath ${1#*=})"; shift 1;;
+        --cscs-config=*) cscs_config_dir="$(realpath ${1#*=})"; shift 1;;
         --targets=*)
             IFS=',' read -ra build_targets <<< "${1#*=}"
             shift 1
@@ -184,16 +184,11 @@ if [ -n "${patch_dir}" ]; then
     done
 fi
 
-# Overlay spack environments
-# --------------------------
-if [ -n "${spack_envs_dir}" ]; then
-    for spack_env in "${spack_envs_dir}"/*/; do
-        [ -d "${spack_env}" ] || continue
-        variant="$(basename ${spack_env})"
-        echo "[build_and_squash] ...... Overlaying spack environment ${variant}"
-        mkdir -p "./config/cscs/spack/${variant}"
-        rsync -a "${spack_env}" "./config/cscs/spack/${variant}/"
-    done
+# Overlay config/cscs
+# -------------------
+if [ -n "${cscs_config_dir}" ]; then
+    echo "[build_and_squash] ...... Overlaying config/cscs with ${cscs_config_dir}"
+    cp -av "${cscs_config_dir}/." ./config/cscs/
 fi
 
 echo "[build_and_squash] ... Getting ICON => done in $(elapsed_since ${start})"
