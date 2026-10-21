@@ -101,16 +101,16 @@ done
 # -----------------
 k=0
 if [ -n "${gitlab_dkrz_token}" ]; then
-    eval "GIT_CONFIG_KEY_${k}=\"url.https://oauth2:${gitlab_dkrz_token}@gitlab.dkrz.de/.insteadOf\""
-    eval "GIT_CONFIG_VALUE_${k}=\"git@gitlab.dkrz.de:\""
+    export "GIT_CONFIG_KEY_${k}=url.https://oauth2:${gitlab_dkrz_token}@gitlab.dkrz.de/.insteadOf"
+    export "GIT_CONFIG_VALUE_${k}=git@gitlab.dkrz.de:"
     (( k += 1 ))
 fi
 if [ -n "${github_token}" ]; then
-    eval "GIT_CONFIG_KEY_${k}=\"url.https://oauth2:${github_token}@github.com/.insteadOf\""
-    eval "GIT_CONFIG_VALUE_${k}=\"git@github.com:\""
+    export "GIT_CONFIG_KEY_${k}=url.https://oauth2:${github_token}@github.com/.insteadOf"
+    export "GIT_CONFIG_VALUE_${k}=git@github.com:"
     (( k += 1 ))
 fi
-(( k > 0 )) &&  GIT_CONFIG_COUNT=${k}
+(( k > 0 )) && export GIT_CONFIG_COUNT=${k}
 
 # Check if building on compute or login node
 # ------------------------------------------
@@ -220,13 +220,13 @@ declare -A install_pids
 
 # Launching async builds in the background
 for build_target in ${build_targets[@]}; do
-    build_dir="build/${build_target}"
+    target_dir="build/${build_target}"
     log="build.${build_target}"
     [ ${on_compute_node} == "true" ] && log+=".${SLURM_JOB_ID}"
     log+=".o"
     echo "[build_and_squash] ...... Launching build ${build_target} => log at ${log}"
-    mkdir -p ${build_dir}
-    pushd ${build_dir} >/dev/null 2>&1
+    mkdir -p ${target_dir}
+    pushd ${target_dir} >/dev/null 2>&1
     uenv run ${icon_uenv} --view default -- time ../../config/cscs/${build_target} > "${original_dir}/${log}" 2>&1 &
     install_pids[${build_target}]="$!"
     popd >/dev/null 2>&1
@@ -282,10 +282,10 @@ echo "[build_and_squash] ... Retrieving squash => done in $(elapsed_since ${star
 
 
 # ========================================
-# Clean /dev/shm on login node
+# Clean /dev/shm on compute node
 # ========================================
-# 
-if [ "${on_compute_node}" == "false" ] && [ "${build_dir}" == "/dev/shm/*" ]; then
+
+if [[ "${on_compute_node}" == "true" && "${build_dir}" == /dev/shm/* ]]; then
     start=$(date +%s)
     echo "[build_and_squash] ... cleaning ${build_dir}"
     rm -rf "${build_dir}"
