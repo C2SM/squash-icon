@@ -213,6 +213,20 @@ sapck_c2sm_version="$(cat config/cscs/SPACK_TAG_SANTIS)"
 git clone --depth 1 --recurse-submodules --shallow-submodules -b "${sapck_c2sm_version}" https://github.com/C2SM/spack-c2sm.git spack-c2sm
 echo "[build_and_squash] ...... Getting sapck-c2sm and spack => done in $(elapsed_since ${start})"
 
+# Avoid race condition when several targets install the shared icon4py venv
+for build_target in ${build_targets[@]}; do
+    if grep -q "install_icon4py.sh" "config/cscs/${build_target}"; then
+        start=$(date +%s)
+        log="install_icon4py"
+        [ ${on_compute_node} == "true" ] && log+=".${SLURM_JOB_ID}"
+        log+=".o"
+        echo "[build_and_squash] ...... Installing icon4py => log at ${log}"
+        uenv run ${icon_uenv} --view default -- ./config/cscs/install_icon4py.sh > "${original_dir}/${log}" 2>&1
+        echo "[build_and_squash] ...... Installing icon4py => done in $(elapsed_since ${start})"
+        break
+    fi
+done
+
 build_start=$(date +%s)
 declare -A install_pids
 

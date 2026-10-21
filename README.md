@@ -58,6 +58,8 @@ Patches and the `config/cscs` overlay are applied right after cloning, before an
 - `--patches=PATCH_DIR` applies every file of `PATCH_DIR` with `git apply`, in alphabetical order.
 - `--cscs-config=CSCS_CONFIG_DIR` copies the content of `CSCS_CONFIG_DIR` over `config/cscs`, adding or replacing files. Building a different flavor, e.g. with another `spack.yaml`, then only requires providing `CSCS_CONFIG_DIR/spack/santis_gpu_double/spack.yaml`. New targets are added by providing their build script, e.g. `CSCS_CONFIG_DIR/santis.my_flavor.nvhpc`, and listing it in `--targets`.
 
+If any target calls `install_icon4py.sh`, the script is run once before the targets are built in parallel, so that they do not install the shared icon4py virtual environment concurrently.
+
 For example:
 
 ``` shell
