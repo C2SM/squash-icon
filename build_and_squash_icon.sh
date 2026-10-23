@@ -232,13 +232,13 @@ declare -A install_pids
 
 # Launching async builds in the background
 for build_target in ${build_targets[@]}; do
-    target_dir="build/${build_target}"
+    target_build_dir="build/${build_target}"
     log="build.${build_target}"
     [ ${on_compute_node} == "true" ] && log+=".${SLURM_JOB_ID}"
     log+=".o"
     echo "[build_and_squash] ...... Launching build ${build_target} => log at ${log}"
-    mkdir -p ${target_dir}
-    pushd ${target_dir} >/dev/null 2>&1
+    mkdir -p ${target_build_dir}
+    pushd ${target_build_dir} >/dev/null 2>&1
     uenv run ${icon_uenv} --view default -- time ../../config/cscs/${build_target} > "${original_dir}/${log}" 2>&1 &
     install_pids[${build_target}]="$!"
     popd >/dev/null 2>&1
