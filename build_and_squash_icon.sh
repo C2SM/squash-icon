@@ -294,18 +294,6 @@ echo "[build_and_squash] ... Retrieving squash => done in $(elapsed_since ${star
 
 
 # ========================================
-# Clean /dev/shm on compute node
-# ========================================
-
-if [[ "${on_compute_node}" == "true" && "${build_dir}" == /dev/shm/* ]]; then
-    start=$(date +%s)
-    echo "[build_and_squash] ... cleaning ${build_dir}"
-    rm -rf "${build_dir}"
-    echo "[build_and_squash] ... cleaning => done in $(elapsed_since ${start})"
-fi
-
-
-# ========================================
 # Accounting
 # ========================================
 
