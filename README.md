@@ -52,26 +52,18 @@ optional arguments
   --github-token=TOKEN           clone from github.com with TOKEN instead of ssh
 ```
 
-### Customizing the build
+The intended usage is to submit it as a job, e.g. with
 
-Patches and the `config/cscs` overlay are applied right after cloning, before any target is built:
-- `--patches=PATCH_DIR` applies every file of `PATCH_DIR` with `git apply`, in alphabetical order.
-- `--cscs-config=CSCS_CONFIG_DIR` copies the content of `CSCS_CONFIG_DIR` over `config/cscs`, adding or replacing files. Building a different flavor, e.g. with another `spack.yaml`, then only requires providing `CSCS_CONFIG_DIR/spack/santis_gpu_double/spack.yaml`. New targets are added by providing their build script, e.g. `CSCS_CONFIG_DIR/santis.my_flavor.nvhpc`, and listing it in `--targets`.
+``` shell
+sbatch --partition=debug --time=00:30:00 ./build_and_squash_icon.sh --uenv="icon/26.2:2612149565" --branch="add_icon4py" --squash="add_icon4py_26.1.squashfs"
+```
 
-If any target calls `install_icon4py.sh`, the script is run once before the targets are built in parallel, so that they do not install the shared icon4py virtual environment concurrently.
-
-For example:
+or, with a customized build:
 
 ``` shell
 sbatch --partition=normal --time=01:00:00 ./build_and_squash_icon.sh --uenv="icon/26.2:2612149565" \
     --commit=0123abc --targets=santis.gpu.nvhpc --patches=./patches --cscs-config=./config_cscs \
     --squash=/capstor/store/cscs/userlab/xyz/icon_builds/my_flavor.squashfs
-```
-
-The intended usage is to submit it as a job, e.g. with
-
-``` shell
-sbatch --partition=debug --time=00:30:00 ./build_and_squash_icon.sh --uenv="icon/26.2:2612149565" --branch="add_icon4py" --squash="add_icon4py_26.1.squashfs"
 ```
 
 Interactive run is also possible for testing and runs on disk, not `/dev/shm`. Still, BE CAUTIOUS with that mode as you could end up using a lot of resources of login nodes (one build runs on 72 procs).
