@@ -41,7 +41,7 @@ optional arguments
   --repo=ICON_REPO               icon git repository, default: git@git.gitlab.dkrz.de:icon/icon-nwp.git
   --branch=ICON_BRANCH           branch of ICON_REPO, default: master
   --commit=ICON_COMMIT           check out ICON_COMMIT of ICON_BRANCH instead of its head
-  --squash=SQUASHED_FILE         squashed path for the icon directory,
+  --squash=SQUASHED_FILE         path for the icon squashed directory,
                                  default: in current directory, filename inferred from ICON_REPO and ICON_BRANCH
   --targets=TARGET1,...          comma separated list of build targets,
                                  default: santis.cpu.nvhpc,santis.gpu.nvhpc,santis.icon4py.nvhpc

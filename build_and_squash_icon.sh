@@ -29,7 +29,7 @@ help_msg(){
     echo "  --repo=ICON_REPO               icon git repository, default: git@git.gitlab.dkrz.de:icon/icon-nwp.git"
     echo "  --branch=ICON_BRANCH           branch of ICON_REPO, default: master"
     echo "  --commit=ICON_COMMIT           check out ICON_COMMIT of ICON_BRANCH instead of its head"
-    echo "  --squash=SQUASHED_FILE         squashed path for the icon directory,"
+    echo "  --squash=SQUASHED_FILE         path for the squashed icon directory,"
     echo "                                 default: in current directory, filename inferred from ICON_REPO and ICON_BRANCH"
     echo "  --targets=TARGET1,...          comma separated list of build targets,"
     echo "                                 default: santis.cpu.nvhpc,santis.gpu.nvhpc,santis.icon4py.nvhpc"
