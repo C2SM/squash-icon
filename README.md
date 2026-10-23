@@ -38,20 +38,32 @@ required arguments
   --uenv=UENV                    icon uenv
 
 optional arguments
-  --repo=ICON_REPO               icon git repository, default: git@gitlab.dkrz.de:icon/icon-nwp.git
+  --repo=ICON_REPO               icon git repository, default: git@git.gitlab.dkrz.de:icon/icon-nwp.git
   --branch=ICON_BRANCH           branch of ICON_REPO, default: master
+  --commit=ICON_COMMIT           check out ICON_COMMIT of ICON_BRANCH instead of its head
   --squash=SQUASHED_FILE         squashed path for the icon directory,
                                  default: in current directory, filename inferred from ICON_REPO and ICON_BRANCH
   --targets=TARGET1,...          comma separated list of build targets,
                                  default: santis.cpu.nvhpc,santis.gpu.nvhpc,santis.icon4py.nvhpc
-  --gitlab-dkrz-token TOKEN      clone from gitlab.dkrz.de with TOKEN instead of ssh
-  --github-token TOKEN           clone from github.com with TOKEN instead of ssh
+  --patches=PATCH_DIR            apply all patch files in PATCH_DIR to the icon clone
+  --cscs-config=CSCS_CONFIG_DIR  copy the content of CSCS_CONFIG_DIR over config/cscs in the icon clone,
+                                 e.g. CSCS_CONFIG_DIR/spack/VARIANT/spack.yaml or additional target scripts
+  --gitlab-dkrz-token=TOKEN      clone from gitlab.dkrz.de with TOKEN instead of ssh
+  --github-token=TOKEN           clone from github.com with TOKEN instead of ssh
 ```
 
 The intended usage is to submit it as a job, e.g. with
 
 ``` shell
 sbatch --partition=debug --time=00:30:00 ./build_and_squash_icon.sh --uenv="icon/26.2:2612149565" --branch="add_icon4py" --squash="add_icon4py_26.1.squashfs"
+```
+
+or, with a customized build:
+
+``` shell
+sbatch --partition=normal --time=01:00:00 ./build_and_squash_icon.sh --uenv="icon/26.2:2612149565" \
+    --commit=0123abc --targets=santis.gpu.nvhpc --patches=./patches --cscs-config=./config_cscs \
+    --squash=/capstor/store/cscs/userlab/xyz/icon_builds/my_flavor.squashfs
 ```
 
 Interactive run is also possible for testing and runs on disk, not `/dev/shm`. Still, BE CAUTIOUS with that mode as you could end up using a lot of resources of login nodes (one build runs on 72 procs).
