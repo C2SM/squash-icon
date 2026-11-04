@@ -126,7 +126,10 @@ fi
 # Build dir
 # ---------
 if [ "${on_compute_node}" == "true" ]; then
-    build_dir="/dev/shm/${USER}/squash_icon"
+    # Per-job directory, since jobs sharing a node would otherwise remove each other's build
+    build_dir="/dev/shm/${USER}/squash_icon_${SLURM_JOB_ID}"
+    # Free the node memory, also on failure, since other jobs may share the node
+    trap 'rm -rf "${build_dir}"' EXIT
 else
     script_dir=$(cd "$(dirname "$0")"; pwd)
     build_dir="${script_dir}/build_and_squash_icon"
